@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fuzzy</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view</a> &gt; <span class="el_source">MainView.java</span></div><h1>MainView.java</h1><pre class="source lang-java linenums">package com.alexandria.view;
+
+import java.util.function.Consumer;
+
+import com.alexandria.view.components.side_navbar.SideNavbar;
+import com.alexandria.view.components.shared.modal.Modal;
+import com.alexandria.view.components.side_navbar.new_project.NewProjectModal;
+import com.alexandria.view.router.Route;
+import com.alexandria.view.router.ViewRouter;
+
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+
+public class MainView extends StackPane {
+
+    private final SideNavbar sideNavbar;
+    private final ViewRouter viewRouter;
+
+<span class="nc" id="L19">    private final Modal modal = new Modal();</span>
+<span class="nc" id="L20">    private final NewProjectModal newProjectModal = new NewProjectModal();</span>
+
+<span class="nc" id="L22">    public MainView() {</span>
+<span class="nc" id="L23">        sideNavbar = new SideNavbar();</span>
+<span class="nc" id="L24">        viewRouter = new ViewRouter();</span>
+
+<span class="nc" id="L26">        BorderPane shell = new BorderPane();</span>
+<span class="nc" id="L27">        shell.setLeft(sideNavbar);</span>
+<span class="nc" id="L28">        shell.setCenter(viewRouter);</span>
+
+<span class="nc" id="L30">        getChildren().addAll(shell, modal);</span>
+
+<span class="nc" id="L32">        configureNavigation();</span>
+
+<span class="nc" id="L34">        viewRouter.navigateTo(Route.LIBRARY);</span>
+<span class="nc" id="L35">    }</span>
+
+    private void configureNavigation() {
+<span class="nc" id="L38">        sideNavbar.setOnNavigate(id -&gt; navigateAndSync(Route.fromId(id)));</span>
+
+<span class="nc" id="L40">        sideNavbar.setOnFooterNavigate(id -&gt; navigateAndSync(Route.fromId(id)));</span>
+
+<span class="nc" id="L42">        sideNavbar.setOnNewProject(this::showNewProjectModal);</span>
+<span class="nc" id="L43">    }</span>
+
+    private void navigateAndSync(Route route) {
+<span class="nc" id="L46">        viewRouter.navigateTo(route);</span>
+<span class="nc" id="L47">        sideNavbar.selectItem(route.id());</span>
+<span class="nc" id="L48">    }</span>
+
+    private void showNewProjectModal() {
+<span class="nc" id="L51">        newProjectModal.reset();</span>
+<span class="nc" id="L52">        modal.show(newProjectModal);</span>
+<span class="nc" id="L53">    }</span>
+
+    public void closeProjectModal() {
+<span class="nc" id="L56">        modal.hide();</span>
+<span class="nc" id="L57">    }</span>
+
+    /* New Project */
+
+    public void setOnProjectCreated(
+            Consumer&lt;NewProjectModal.CreatedProject&gt; handler) {
+
+<span class="nc" id="L64">        newProjectModal.setOnCreated(handler);</span>
+<span class="nc" id="L65">    }</span>
+
+    public void setNewProjectLoading(boolean loading) {
+<span class="nc" id="L68">        newProjectModal.setLoading(loading);</span>
+<span class="nc" id="L69">    }</span>
+
+    public void showProjectError(String message) {
+<span class="nc" id="L72">        newProjectModal.showError(message);</span>
+<span class="nc" id="L73">    }</span>
+
+    /* Navigation */
+
+    public void navigateTo(Route route) {
+<span class="nc" id="L78">        navigateAndSync(route);</span>
+<span class="nc" id="L79">    }</span>
+
+    public SideNavbar getSideNavbar() {
+<span class="nc" id="L82">        return sideNavbar;</span>
+    }
+
+    public ViewRouter getViewRouter() {
+<span class="nc" id="L86">        return viewRouter;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

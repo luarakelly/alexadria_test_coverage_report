@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Modal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fuzzy</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.modal</a> &gt; <span class="el_source">Modal.java</span></div><h1>Modal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.modal;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.layout.StackPane;
+
+public class Modal extends StackPane {
+
+<span class="nc" id="L9">    private final StackPane contentHost = new StackPane();</span>
+<span class="nc" id="L10">    private boolean dismissible = true;</span>
+
+<span class="nc" id="L12">    public Modal() {</span>
+<span class="nc" id="L13">        getStyleClass().add(&quot;modal-overlay&quot;);</span>
+<span class="nc" id="L14">        setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L15">        setPickOnBounds(true);</span>
+
+<span class="nc" id="L17">        setVisible(false);</span>
+<span class="nc" id="L18">        setManaged(false);</span>
+
+<span class="nc" id="L20">        contentHost.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L21">        contentHost.setPickOnBounds(false);</span>
+<span class="nc" id="L22">        getChildren().add(contentHost);</span>
+
+<span class="nc" id="L24">        setOnMouseClicked(event -&gt; {</span>
+<span class="nc bnc" id="L25" title="All 6 branches missed.">            if ((event.getTarget() == this || event.getTarget() == contentHost) &amp;&amp; dismissible) {</span>
+<span class="nc" id="L26">                hide();</span>
+            }
+<span class="nc" id="L28">        });</span>
+<span class="nc" id="L29">    }</span>
+
+    public void setContent(Node content) {
+<span class="nc" id="L32">        contentHost.getChildren().setAll(content);</span>
+<span class="nc" id="L33">    }</span>
+
+    public void show(Node content) {
+<span class="nc" id="L36">        show(content, true);</span>
+<span class="nc" id="L37">    }</span>
+
+    public void show(Node content, boolean dismissible) {
+<span class="nc" id="L40">        this.dismissible = dismissible;</span>
+<span class="nc" id="L41">        setContent(content);</span>
+<span class="nc" id="L42">        show();</span>
+<span class="nc" id="L43">    }</span>
+
+    public void show() {
+<span class="nc" id="L46">        setVisible(true);</span>
+<span class="nc" id="L47">        setManaged(true);</span>
+<span class="nc" id="L48">        toFront();</span>
+<span class="nc" id="L49">    }</span>
+
+    public void hide() {
+<span class="nc" id="L52">        setVisible(false);</span>
+<span class="nc" id="L53">        setManaged(false);</span>
+<span class="nc" id="L54">    }</span>
+
+    public boolean isShowing() {
+<span class="nc" id="L57">        return isVisible();</span>
+    }
+
+    public Node getContent() {
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        return contentHost.getChildren().isEmpty()</span>
+<span class="nc" id="L62">                ? null</span>
+<span class="nc" id="L63">                : contentHost.getChildren().get(0);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyseController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fuzzy</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">AnalyseController.java</span></div><h1>AnalyseController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import java.sql.SQLException;
+import java.util.Comparator;
+import java.util.List;
+
+import com.alexandria.dao.TermAnalysisDAO;
+import com.alexandria.dao.TextAnalysisDAO;
+import com.alexandria.model.TermAnalysis;
+import com.alexandria.model.Text;
+import com.alexandria.model.TextAnalysis;
+import com.alexandria.model.User;
+import com.alexandria.service.analysis.*;
+import com.alexandria.utils.JsonMapper;
+
+/**
+ * Controller for text analysis and search. Pure business logic — no View
+ * imports at all. Returns service-level result types (TextAnalysisResult,
+ * TermAnalysisResult, SearchMatch); translating those into view-local types
+ * is done by whoever wires this controller (MainController).
+ */
+public class AnalyseController {
+
+    private final SearchServiceINT searchService;
+    private final TermAnalysisServiceINT termAnalysisService;
+    private final TextAnalysisServiceINT textAnalysisService;
+    private final TextAnalysisDAO textAnalysisDAO;
+    private final TermAnalysisDAO termAnalysisDAO;
+<span class="nc" id="L29">    private final UserSessionController session = UserSessionController.getInstance();</span>
+
+    private Text currentText;
+
+    public AnalyseController(
+            SearchServiceINT searchService,
+            TermAnalysisServiceINT termAnalysisService,
+            TextAnalysisServiceINT textAnalysisService,
+            TextAnalysisDAO textAnalysisDAO,
+<span class="nc" id="L38">            TermAnalysisDAO termAnalysisDAO) {</span>
+<span class="nc" id="L39">        this.searchService = searchService;</span>
+<span class="nc" id="L40">        this.termAnalysisService = termAnalysisService;</span>
+<span class="nc" id="L41">        this.textAnalysisService = textAnalysisService;</span>
+<span class="nc" id="L42">        this.textAnalysisDAO = textAnalysisDAO;</span>
+<span class="nc" id="L43">        this.termAnalysisDAO = termAnalysisDAO;</span>
+<span class="nc" id="L44">    }</span>
+
+    /** Sets the active text and loads (or reuses cached) whole-text analysis. */
+    public TextAnalysisOutcome openText(Text text) {
+<span class="nc" id="L48">        this.currentText = text;</span>
+        try {
+<span class="nc" id="L50">            TextAnalysis existing = findLatestTextAnalysis(text.getId());</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            TextAnalysisResult result = existing != null</span>
+<span class="nc" id="L53">                    ? JsonMapper.fromJson(existing.getAnalysisData(), TextAnalysisResult.class)</span>
+<span class="nc" id="L54">                    : computeAndPersistTextAnalysis();</span>
+
+<span class="nc" id="L56">            return TextAnalysisOutcome.ok(result);</span>
+<span class="nc" id="L57">        } catch (SQLException e) {</span>
+<span class="nc" id="L58">            return TextAnalysisOutcome.error(&quot;Could not load text analysis: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /** Runs a search against the currently open text and loads (or reuses cached) term analysis. */
+    public SearchOutcome search(String term, boolean caseSensitive, boolean fuzzy, boolean wholeWordsOnly) {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (currentText == null) {</span>
+<span class="nc" id="L65">            return SearchOutcome.error(&quot;No text is currently open.&quot;);</span>
+        }
+
+        try {
+<span class="nc" id="L69">            SearchSettings settings = new SearchSettings(caseSensitive, fuzzy, wholeWordsOnly);</span>
+<span class="nc" id="L70">            List&lt;SearchMatch&gt; matches = searchService.search(currentText.getContent(), term, settings);</span>
+
+<span class="nc" id="L72">            TermAnalysis existing = findLatestTermAnalysis(currentText.getId(), term);</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            TermAnalysisResult termResult = existing != null</span>
+<span class="nc" id="L74">                    ? JsonMapper.fromJson(existing.getAnalysisData(), TermAnalysisResult.class)</span>
+<span class="nc" id="L75">                    : computeAndPersistTermAnalysis(term);</span>
+
+<span class="nc" id="L77">            return SearchOutcome.ok(matches, termResult);</span>
+<span class="nc" id="L78">        } catch (SQLException e) {</span>
+<span class="nc" id="L79">            return SearchOutcome.error(&quot;Could not complete search: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /* Business logic */
+
+    private TextAnalysisResult computeAndPersistTextAnalysis() throws SQLException {
+<span class="nc" id="L86">        TextAnalysisResult result = textAnalysisService.analyzeText(currentText.getContent());</span>
+
+<span class="nc" id="L88">        Integer userId = currentUserId();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (userId != null) {</span>
+<span class="nc" id="L90">            textAnalysisDAO.create(new TextAnalysis(userId, currentText.getId(), JsonMapper.toJson(result)));</span>
+        }
+<span class="nc" id="L92">        return result;</span>
+    }
+
+    private TermAnalysisResult computeAndPersistTermAnalysis(String term) throws SQLException {
+<span class="nc" id="L96">        TermAnalysisResult result = termAnalysisService.analyzeTerm(currentText.getContent(), term);</span>
+
+<span class="nc" id="L98">        Integer userId = currentUserId();</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (userId != null) {</span>
+<span class="nc" id="L100">            termAnalysisDAO.create(new TermAnalysis(userId, currentText.getId(), term, JsonMapper.toJson(result)));</span>
+        }
+<span class="nc" id="L102">        return result;</span>
+    }
+
+    private TextAnalysis findLatestTextAnalysis(int textId) throws SQLException {
+<span class="nc" id="L106">        return textAnalysisDAO.findAllByTextId(textId).stream()</span>
+<span class="nc" id="L107">                .max(Comparator.comparing(TextAnalysis::getCreatedAt))</span>
+<span class="nc" id="L108">                .orElse(null);</span>
+    }
+
+    private TermAnalysis findLatestTermAnalysis(int textId, String term) throws SQLException {
+<span class="nc" id="L112">        return termAnalysisDAO.findAllByTextId(textId).stream()</span>
+<span class="nc" id="L113">                .filter(row -&gt; row.getTerm().equalsIgnoreCase(term))</span>
+<span class="nc" id="L114">                .max(Comparator.comparing(TermAnalysis::getCreatedAt))</span>
+<span class="nc" id="L115">                .orElse(null);</span>
+    }
+
+    private Integer currentUserId() {
+<span class="nc" id="L119">        User user = session.getCurrentUser();</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        return user != null ? user.getId() : null;</span>
+    }
+
+    /* Outcomes — same Result-style pattern as ProjectController */
+
+<span class="nc" id="L125">    public record TextAnalysisOutcome(boolean success, String message, TextAnalysisResult result) {</span>
+<span class="nc" id="L126">        static TextAnalysisOutcome ok(TextAnalysisResult result) { return new TextAnalysisOutcome(true, null, result); }</span>
+<span class="nc" id="L127">        static TextAnalysisOutcome error(String message) { return new TextAnalysisOutcome(false, message, null); }</span>
+    }
+
+<span class="nc" id="L130">    public record SearchOutcome(boolean success, String message, List&lt;SearchMatch&gt; matches, TermAnalysisResult termAnalysis) {</span>
+        static SearchOutcome ok(List&lt;SearchMatch&gt; matches, TermAnalysisResult termAnalysis) {
+<span class="nc" id="L132">            return new SearchOutcome(true, null, matches, termAnalysis);</span>
+        }
+<span class="nc" id="L134">        static SearchOutcome error(String message) { return new SearchOutcome(false, message, null, null); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

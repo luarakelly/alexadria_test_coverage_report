@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fuzzy</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.dao</a> &gt; <span class="el_source">TextDAO.java</span></div><h1>TextDAO.java</h1><pre class="source lang-java linenums">package com.alexandria.dao;
+
+import com.alexandria.db.DatabaseConnection;
+import com.alexandria.model.FileType;
+import com.alexandria.model.Text;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L15">public class TextDAO {</span>
+	public Text create(Text text) throws SQLException {
+<span class="fc" id="L17">		String sql = &quot;INSERT INTO texts (user_id, title, file_name, file_type, content) VALUES (?, ?, ?, ?, ?)&quot;;</span>
+
+<span class="fc" id="L19">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L20">				PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L21">			statement.setInt(1, text.getUserId());</span>
+<span class="fc" id="L22">			statement.setString(2, text.getTitle());</span>
+<span class="fc" id="L23">			statement.setString(3, text.getFileName());</span>
+<span class="fc" id="L24">			statement.setString(4, text.getFileType().name());</span>
+<span class="fc" id="L25">			statement.setString(5, text.getContent());</span>
+
+<span class="fc" id="L27">			statement.executeUpdate();</span>
+
+<span class="fc" id="L29">			try (ResultSet keys = statement.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">				if (keys.next()) {</span>
+<span class="fc" id="L31">					text.setId(keys.getInt(1));</span>
+				}
+			}
+		}
+
+<span class="fc" id="L36">		return text;</span>
+	}
+
+	public Text findById(int id) throws SQLException {
+<span class="fc" id="L40">		String sql = &quot;SELECT * FROM texts WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L42">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L43">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L44">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L46">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">				if (resultSet.next()) {</span>
+<span class="fc" id="L48">					String fileType = resultSet.getString(&quot;file_type&quot;);</span>
+
+<span class="fc" id="L50">					return new Text(</span>
+<span class="fc" id="L51">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L52">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L53">							resultSet.getString(&quot;title&quot;),</span>
+<span class="fc" id="L54">							resultSet.getString(&quot;file_name&quot;),</span>
+<span class="fc" id="L55">							FileType.valueOf(fileType),</span>
+<span class="fc" id="L56">							resultSet.getString(&quot;content&quot;),</span>
+<span class="fc" id="L57">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+				}
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">			}</span>
+<span class="pc bpc" id="L60" title="2 of 4 branches missed.">		}</span>
+
+<span class="fc" id="L62">		return null;</span>
+	}
+
+	public List&lt;Text&gt; findAllByUserId(int userId) throws SQLException {
+<span class="fc" id="L66">		String sql = &quot;SELECT * FROM texts WHERE user_id = ?&quot;;</span>
+
+<span class="fc" id="L68">		List&lt;Text&gt; texts = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L70">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L71">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L72">			statement.setInt(1, userId);</span>
+
+<span class="fc" id="L74">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">				while (resultSet.next()) {</span>
+<span class="fc" id="L76">					String fileType = resultSet.getString(&quot;file_type&quot;);</span>
+
+<span class="fc" id="L78">					Text text = new Text(</span>
+<span class="fc" id="L79">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L80">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L81">							resultSet.getString(&quot;title&quot;),</span>
+<span class="fc" id="L82">							resultSet.getString(&quot;file_name&quot;),</span>
+<span class="fc" id="L83">							FileType.valueOf(fileType),</span>
+<span class="fc" id="L84">							resultSet.getString(&quot;content&quot;),</span>
+<span class="fc" id="L85">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+
+<span class="fc" id="L87">					texts.add(text);</span>
+<span class="fc" id="L88">				}</span>
+			}
+		}
+
+<span class="fc" id="L92">		return texts;</span>
+	}
+
+	public boolean update(Text text) throws SQLException {
+<span class="fc" id="L96">		String sql = &quot;UPDATE texts SET title = ?, file_name = ?, file_type = ?, content = ? WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L98">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L99">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L100">			statement.setString(1, text.getTitle());</span>
+<span class="fc" id="L101">			statement.setString(2, text.getFileName());</span>
+
+<span class="fc" id="L103">			statement.setString(3, text.getFileType().name());</span>
+<span class="fc" id="L104">			statement.setString(4, text.getContent());</span>
+<span class="fc" id="L105">			statement.setInt(5, text.getId());</span>
+
+<span class="fc" id="L107">			int updatedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">			return updatedRows &gt; 0;</span>
+		}
+	}
+
+	public boolean delete(int id) throws SQLException {
+<span class="fc" id="L114">		String sql = &quot;DELETE FROM texts WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L116">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L117">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L118">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L120">			int deletedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">			return deletedRows &gt; 0;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
